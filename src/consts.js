@@ -60,7 +60,7 @@ const CELL_HEIGHT = 10;
 const STATE_PAUSE = 'pause';
 const STATE_PLAY = 'play';
 
-class Const {
+export default class Const {
     static get COMMAND_MOVE() { return COMMAND_MOVE; }
     static get COMMAND_LOOK() { return COMMAND_LOOK; }
     static get COMMAND_TURN() { return COMMAND_TURN; }

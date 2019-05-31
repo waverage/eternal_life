@@ -1,4 +1,7 @@
-class Bot {
+import Const from "../consts";
+import Util from "../utils/util";
+
+export default class Bot {
     constructor() {
         this.age = 0;
         this.hp = 200;
@@ -27,7 +30,7 @@ class Bot {
     }
 
     getRandCommand() {
-        let command = Const.COMMANDS[Util.rand(0, COMMANDS.length - 1)];
+        let command = Const.COMMANDS[Util.rand(0, Const.COMMANDS.length - 1)];
         if (command === Const.COMMAND_GOTO) {
             command = Util.rand(Const.COMMAND_GOTO, Const.COMMAND_AMOUNT);
         }

@@ -1,7 +1,7 @@
 const MIN_SCALE = 0.01;
 const MAX_SCALE = 10;
 
-class Camera {
+export default class Camera {
     constructor(game) {
         this.game = game;
         this.canvas = game.canvas;

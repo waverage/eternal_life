@@ -1,4 +1,6 @@
-class Util {
+import Const from "../consts";
+
+export default class Util {
     static rand(min, max) {
         var rand = min - 0.5 + Math.random() * (max - min + 1)
         rand = Math.round(rand);

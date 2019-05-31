@@ -1,49 +1,54 @@
-class CommandExecutor {
+import Const from "../consts";
+import Util from "../utils/util";
+import Bot from "../objects/bot";
+import Dead from "../objects/dead";
+
+export default class CommandExecutor {
     constructor(runtime) {
         this.runtime = runtime;
     }
 
-    commandIsMove(command) {
+    static commandIsMove(command) {
         return command === Const.COMMAND_MOVE;
     }
 
-    commandIsLook(command) {
+    static commandIsLook(command) {
         return command === Const.COMMAND_LOOK;
     }
 
-    commandIsTurn(command) {
+    static commandIsTurn(command) {
         return command === Const.COMMAND_TURN;
     }
 
-    commandIsEat(command) {
+    static commandIsEat(command) {
         return command === Const.COMMAND_EAT;
     }
 
-    commandIsSunSleep(command) {
+    static commandIsSunSleep(command) {
         return command === Const.COMMAND_SLEEP;
     }
 
-    commandIsGiveEnergy(command) {
+    static commandIsGiveEnergy(command) {
         return command === Const.COMMAND_GIVE_ENERGY;
     }
 
-    commandIsHPLower(command) {
+    static commandIsHPLower(command) {
         return command === Const.COMMAND_HP_LOWER;
     }
 
-    commandIsHPBigger(command) {
+    static commandIsHPBigger(command) {
         return command === Const.COMMAND_HP_BIGGER;
     }
 
-    commandIsClone(command) {
+    static commandIsClone(command) {
         return command === Const.COMMAND_CLONE;
     }
 
-    commandIsGoto(command) {
-        return command > Const.COMMAND_GOTO;
-    }
+    // static commandIsGoto(command) {
+    //     return command > Const.COMMAND_GOTO;
+    // }
 
-    commandIterations(bot, botIndex) {
+    commandIterations(bot) {
         if (bot === null) {
             return;
         }
@@ -56,7 +61,7 @@ class CommandExecutor {
             }
 
             // 1
-            if (this.commandIsMove(command)) {
+            if (this.constructor.commandIsMove(command)) {
                 // Move
                 //debugger;
                 let direction = bot.params[bot.command_cursor] % 8;
@@ -85,7 +90,7 @@ class CommandExecutor {
                         return;
                 }
                 // 2
-            } else if (this.commandIsLook(command)) {
+            } else if (this.constructor.commandIsLook(command)) {
                 // Look
                 let newPos = Util.xyFromVector(bot.x, bot.y, bot.direction);
                 let targetPosCellType = this.runtime.getCellType(this.runtime.matrix[newPos.y][newPos.x]);
@@ -93,13 +98,13 @@ class CommandExecutor {
                 bot.increaseCursor(cursorModifier);
                 return;
                 // 3
-            } else if (this.commandIsTurn(command)) {
+            } else if (this.constructor.commandIsTurn(command)) {
                 // Turn
                 bot.direction = bot.params[bot.command_cursor] % 8;
                 bot.increaseCursor(1);
                 return;
                 // 4
-            } else if (this.commandIsEat(command)) {
+            } else if (this.constructor.commandIsEat(command)) {
                 // Eat
                 // let direction = bot.params[bot.command_cursor] % 8;
                 let targetPos = Util.xyFromVector(bot.x, bot.y, bot.direction);
@@ -129,11 +134,11 @@ class CommandExecutor {
                         return;
                 }
                 // 5
-            } else if (this.commandIsSunSleep(command)) {
+            } else if (this.constructor.commandIsSunSleep(command)) {
                 // Sleep
                 bot.hp += 3;
                 return;
-            } else if (this.commandIsGiveEnergy(command)) {
+            } else if (this.constructor.commandIsGiveEnergy(command)) {
                 let neighboars = this.getNeighboars(bot);
                 if (neighboars.length <= 0) {
                     bot.increaseCursor(1);
@@ -146,21 +151,21 @@ class CommandExecutor {
                 bot.hp -= energyToGive;
                 bot.increaseCursor(1);
                 return;
-            } else if (this.commandIsHPLower(command)) {
+            } else if (this.constructor.commandIsHPLower(command)) {
                 let checkWith = bot.params[bot.command_cursor];
                 if (bot.hp < checkWith) {
                     bot.command_cursor += 1;
                 } else {
                     bot.command_cursor += 2;
                 }
-            } else if (this.commandIsHPBigger(command)) {
+            } else if (this.constructor.commandIsHPBigger(command)) {
                 let checkWith = bot.params[bot.command_cursor];
                 if (bot.hp > checkWith) {
                     bot.command_cursor += 1;
                 } else {
                     bot.command_cursor += 2;
                 }
-            } else if (this.commandIsClone(command)) {
+            } else if (this.constructor.commandIsClone(command)) {
                 if (bot.hp >= bot.hp_to_clone + 10) {
                     this.cloneBot(bot);
                     bot.command_cursor += 1;
@@ -170,7 +175,6 @@ class CommandExecutor {
             } else {
                 // Goto
                 bot.increaseCursor(command);
-                continue;
             }
         }
     }

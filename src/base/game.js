@@ -1,4 +1,8 @@
-class Game {
+import Camera from "./camera";
+import Const from "../consts";
+import Runtime from "./runtime";
+
+export default class Game {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
@@ -19,7 +23,7 @@ class Game {
 
         // Resize canvas
         this.canvas.width = document.body.clientWidth - 10;
-        this.canvas.height = document.body.clientHeight - this.toolbarWrap.clientHeight - 10;
+        this.canvas.height = document.body.clientHeight - this.toolbarWrap.clientHeight - 100;
 
         this.runtime.init(this.density);
 
@@ -76,14 +80,13 @@ class Game {
         };
     }
 
-    getCellColor(cellType) {
+    static getCellColor(cellType) {
         return Const.CELL_COLORS[cellType];
     }
 
     renderStep() {
         let step = this.runtime.getStepResult();
         if (step === null || step.length === 0) {
-            console.log('step is empty');
             return;
         }
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -91,14 +94,14 @@ class Game {
         this.ctx.fillStyle = '#333';
         this.ctx.fillRect(0, 0, Const.WORLD_WIDTH * Const.CELL_WIDTH  * 3, Const.WORLD_HEIGHT * Const.CELL_HEIGHT * 3);
 
-        var cell_w = Const.CELL_WIDTH * this.camera.scale;
-        var cell_h = Const.CELL_HEIGHT * this.camera.scale;
+        let cell_w = Const.CELL_WIDTH * this.camera.scale;
+        let cell_h = Const.CELL_HEIGHT * this.camera.scale;
 
         for (let y = 0; y < step.length; y++) {
             for (let x = 0; x < step[y].length; x++) {
                 let cellType = this.runtime.getCellType(step[y][x]);
                 if (cellType !== Const.CELL_TYPE_EMPTY && cellType !== Const.CELL_TYPE_BOT) {
-                    this.ctx.fillStyle = this.getCellColor(cellType);
+                    this.ctx.fillStyle = this.constructor.getCellColor(cellType);
                     let cx = this.camera.x + (x * cell_w) + 1;
                     let cy = this.camera.y + (y * cell_h + 1);
                     let cw = cell_w - 2;

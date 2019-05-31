@@ -1,4 +1,10 @@
-class Runtime {
+import CommandExecutor from "./command_executor";
+import Const from "../consts";
+import Util from "../utils/util";
+import Bot from "../objects/bot";
+import Dead from "../objects/dead";
+
+export default class Runtime {
     constructor() {
         this.iteration = 0;
         this.generation = 0;
@@ -24,7 +30,7 @@ class Runtime {
         for (let y = 0; y < Const.WORLD_HEIGHT; y++) {
             this.matrix[y] = [];
             for (let x = 0; x < Const.WORLD_WIDTH; x++) {
-                let cellType = this.getRandCellType();
+                let cellType = this.constructor.getRandCellType();
 
                 if (cellType === Const.CELL_TYPE_BOT) {
                     let bot = new Bot();
@@ -41,7 +47,7 @@ class Runtime {
         }
     }
 
-    getRandCellType() {
+    static getRandCellType() {
         let percentages = [[Const.CELL_TYPE_BOT, Const.BOT_PERCENT], [Const.CELL_TYPE_EMPTY, Const.EMPTY_PERCENT]].sort();
         let randValue = Math.random();
         let currPos = 0;
@@ -85,7 +91,6 @@ class Runtime {
     nextGeneration() {
         let winnerBots = this.bots.slice(0);
         if (winnerBots.length < 20) {
-            debugger;
             for (let i = 0; i < 20 - winnerBots.length; i++) {
                 if (this.last_ten_bots.length - 1 >= i) {
                     winnerBots.push(this.last_ten_bots[i]);
