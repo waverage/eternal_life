@@ -5,9 +5,9 @@ export default class Camera {
     constructor(game) {
         this.game = game;
         this.canvas = game.canvas;
-        this.scale = 1;
-        this.x = 0;
-        this.y = 0;
+        this.scale = 0.65;
+        this.x = 300;
+        this.y = 20;
         this.prevMousePos = {x: 0, y: 0};
         this.isDrag = false;
 

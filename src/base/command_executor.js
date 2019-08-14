@@ -44,9 +44,17 @@ export default class CommandExecutor {
         return command === Const.COMMAND_CLONE;
     }
 
-    // static commandIsGoto(command) {
-    //     return command > Const.COMMAND_GOTO;
-    // }
+    static commandIsHaveSun(command) {
+        return command === Const.COMMAND_HAVE_SUN;
+    }
+
+    getSunEnergy(bot) {
+        if (bot.y > this.runtime.MAX_Y_FOR_SUN) {
+            return 0;
+        }
+
+        return ((100 - (bot.y / this.runtime.Y_SUN_PERCENT)) / 10) * Const.SUN_ENERGY_REWARD_COEFICIENT;
+    }
 
     commandIterations(bot) {
         if (bot === null) {
@@ -106,8 +114,8 @@ export default class CommandExecutor {
                 // 4
             } else if (this.constructor.commandIsEat(command)) {
                 // Eat
-                // let direction = bot.params[bot.command_cursor] % 8;
-                let targetPos = Util.xyFromVector(bot.x, bot.y, bot.direction);
+                let direction = bot.params[bot.command_cursor] % 8;
+                let targetPos = Util.xyFromVector(bot.x, bot.y, direction);
                 let targetPosCellType = this.runtime.getCellType(this.runtime.matrix[targetPos.y][targetPos.x]);
 
                 switch (targetPosCellType) {
@@ -117,17 +125,17 @@ export default class CommandExecutor {
                             this.addToLast(this.runtime.bots[targetBotIndex]);
                             this.runtime.bots[targetBotIndex] = null;
                             this.runtime.tmp_matrix[targetPos.y][targetPos.x] = Const.CELL_TYPE_EMPTY;
-                            bot.hp += 10;
+                            bot.hp += Const.EAT_BOT_REWARD;
                             bot.kill_score++;
                         }
 
-                        bot.increaseCursor(2);
+                        bot.increaseCursor(3);
                         return;
                     case Const.CELL_TYPE_DEAD:
                         this.runtime.tmp_matrix[targetPos.y][targetPos.x] = Const.CELL_TYPE_EMPTY;
-                        bot.hp += 5;
+                        bot.hp += Const.EAT_DEAD_REWARD;
                         bot.kill_score++;
-                        bot.increaseCursor(2);
+                        bot.increaseCursor(4);
                         return;
                     default:
                         bot.increaseCursor(2);
@@ -136,7 +144,14 @@ export default class CommandExecutor {
                 // 5
             } else if (this.constructor.commandIsSunSleep(command)) {
                 // Sleep
-                bot.hp += 3;
+                let e = this.getSunEnergy(bot);
+                if (e > 0) {
+                    bot.hp += e;
+                    bot.sun_energy += e;
+                    bot.increaseCursor(1);
+                } else {
+                    bot.increaseCursor(2);
+                }
                 return;
             } else if (this.constructor.commandIsGiveEnergy(command)) {
                 let neighboars = this.getNeighboars(bot);
@@ -154,23 +169,30 @@ export default class CommandExecutor {
             } else if (this.constructor.commandIsHPLower(command)) {
                 let checkWith = bot.params[bot.command_cursor];
                 if (bot.hp < checkWith) {
-                    bot.command_cursor += 1;
+                    bot.increaseCursor(1);
                 } else {
-                    bot.command_cursor += 2;
+                    bot.increaseCursor(2);
                 }
             } else if (this.constructor.commandIsHPBigger(command)) {
                 let checkWith = bot.params[bot.command_cursor];
                 if (bot.hp > checkWith) {
-                    bot.command_cursor += 1;
+                    bot.increaseCursor(1);
                 } else {
-                    bot.command_cursor += 2;
+                    bot.increaseCursor(2);
                 }
             } else if (this.constructor.commandIsClone(command)) {
                 if (bot.hp >= bot.hp_to_clone + 10) {
                     this.cloneBot(bot);
-                    bot.command_cursor += 1;
+                    bot.increaseCursor(1);
                 } else {
-                    bot.command_cursor += 2;
+                    bot.increaseCursor(2);
+                }
+                return;
+            } else if (this.constructor.commandIsHaveSun(command)) {
+                if (bot.y <= this.runtime.MAX_Y_FOR_SUN) {
+                    bot.increaseCursor(1);
+                } else {
+                    bot.increaseCursor(2);
                 }
             } else {
                 // Goto
@@ -180,7 +202,6 @@ export default class CommandExecutor {
     }
 
     getBotEmptyNeighboarPos(bot) {
-        // console.log('input pos', {x: bot.x, y: bot.y});
         for (let i = 0; i < 8; i++) {
             let pos = Util.xyFromVector(bot.x, bot.y, i);
             let cellType = this.runtime.getCellType(this.runtime.tmp_matrix[pos.y][pos.x]);
@@ -218,10 +239,8 @@ export default class CommandExecutor {
         newBot.hp_to_clone = bot.hp_to_clone;
         newBot.brain = bot.brain;
         newBot.params = bot.params;
-
-        if (Math.random() > 0.9) {
-            newBot.mutateBrain(1);
-        }
+        newBot.generation = ++bot.generation;
+        newBot.mutate();
         this.runtime.tmp_matrix[newBot.y][newBot.x] = Const.CELL_TYPE_BOT;
         this.runtime.tmp_bots.push(newBot);
 
@@ -229,28 +248,29 @@ export default class CommandExecutor {
     }
 
     addToLast(bot) {
-        this.runtime.last_ten_bots.unshift(bot);
-        if (this.runtime.last_ten_bots.length > 10) {
-            this.runtime.last_ten_bots.splice(-1, 1)
-        }
+        // this.runtime.last_ten_bots.unshift(bot);
+        // if (this.runtime.last_ten_bots.length > 10) {
+        //     this.runtime.last_ten_bots.splice(-1, 1)
+        // }
     }
 
     processBot(bot, botIndex) {
         this.commandIterations(bot, botIndex);
         bot.hp--;
+        bot.age++;
+
         if (bot.hp <= 0) {
             this.runtime.tmp_matrix[bot.y][bot.x] = new Dead();
             this.addToLast(this.runtime.bots[botIndex]);
             this.runtime.bots[botIndex] = null;
-        } else {
-            if (bot.hp > bot.hp_to_clone + 100 && Math.random() > 0.97) {
+        } else if (bot.hp > bot.hp_to_clone * Const.BOT_FORCE_CLONE_COEFICIENT) {
+            if (Math.random() < Const.BOT_FORCE_CLONE_RAND_VALUE) {
                 if (!this.cloneBot(bot)) {
                     this.addToLast(this.runtime.bots[botIndex]);
                     this.runtime.bots[botIndex] = null;
                     this.runtime.tmp_matrix[bot.y][bot.x] = new Dead();
                 }
             }
-            bot.age++;
         }
     }
 }

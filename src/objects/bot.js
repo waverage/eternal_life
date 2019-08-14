@@ -3,8 +3,10 @@ import Util from "../utils/util";
 
 export default class Bot {
     constructor() {
+        this.generation = 0;
         this.age = 0;
-        this.hp = 200;
+        this.hp = Util.rand(Const.DEFAULT_MIN_BOT_HP, Const.DEFAULT_MAX_BOT_HP);
+        this.sun_energy = 0;
         this.x = 0;
         this.y = 0;
         this.direction = Const.DIRECTIONS[Util.rand(0, 3)];
@@ -12,7 +14,7 @@ export default class Bot {
         this.brain = [];
         this.params = [];
         this.kill_score = 0;
-        this.hp_to_clone = Util.rand(201, 300);
+        this.hp_to_clone = Util.rand(Const.DEFAULT_MIN_HP_TO_CLONE, Const.DEFAULT_MAX_HP_TO_CLONE);
         this.color = {
             r: 62,
             g: 81,
@@ -42,32 +44,31 @@ export default class Bot {
         this.params = [];
 
         for (let i = 0; i < Const.BRAIN_CAPACITY; i++) {
-            this.params.push(Util.rand(0, 512));
+            this.params.push(Util.rand(Const.MIN_BOT_PARAMS_VALUE, Const.MAX_BOT_PARAMS_VALUE));
             this.brain[i] = this.getRandCommand();
         }
     }
 
-    mutateBrain(amount) {
-        for (let i = 0; i < amount; i++) {
-            this.brain[Util.rand(0, this.brain.length - 1)] = this.getRandCommand();
-            this.params[Util.rand(0, this.params.length - 1)] = Util.rand(0, 512);
+    mutate() {
+        let rValue = Math.random();
+        if (rValue < Const.MUTATE_BRAIN_TRIGGER_VALUE) {
+            this.mutateBrain();
+        }
+        if (rValue > (1 - Const.MUTATE_PARAMS_TRIGGER_VALUE)) {
+            this.mutateParams();
         }
 
-        this.hp_to_clone += Util.rand(-10, 10);
+        this.hp_to_clone += Util.rand(Const.MIN_CLONE_HP_MODIFIER, Const.MAX_CLONE_HP_MODIFIER);
+        if (this.hp_to_clone < Const.MIN_BOT_HP_TO_CLONE_LIMIT) {
+            this.hp_to_clone = Const.MIN_BOT_HP_TO_CLONE_LIMIT;
+        }
     }
 
-    getColor() {
-        let r = this.kill_score > 255 ? 255 : this.kill_score;
-        let n = Math.round(this.kill_score / 2);
-        let g = this.color.g - n;
-        if (g < 0) {
-            g = 0;
-        }
+    mutateBrain() {
+        this.brain[Util.rand(0, this.brain.length - 1)] = this.getRandCommand();
+    }
 
-        let b = this.color.b - n;
-        if (b < 0) {
-            b = 0;
-        }
-        return 'rgb(' + r + ',' + g + ',' + b + ')';
+    mutateParams() {
+        this.params[Util.rand(0, this.params.length - 1)] = Util.rand(Const.MIN_BOT_PARAMS_VALUE, Const.MAX_BOT_PARAMS_VALUE);
     }
 }

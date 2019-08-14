@@ -20,14 +20,16 @@ export default class Util {
         if (r === 7 || r === 0 || r === 1) {
             yt--;
             if (yt < 0) {
-                yt = Const.WORLD_HEIGHT - 1;
+                // yt = Const.WORLD_HEIGHT - 1; // disable transition from top to bottom
+                yt = 0;
             }
         }
 
         if (r === 5 || r === 4 || r === 3) {
             yt++;
             if (yt >= Const.WORLD_HEIGHT) {
-                yt = 0;
+                // yt = 0;
+                yt = Const.WORLD_HEIGHT - 1;
             }
         }
 
@@ -46,5 +48,25 @@ export default class Util {
         }
 
         return {x: xt, y: yt};
+    }
+
+    static interpolateColor(start, end, percent) {
+        let rr = end.r - start.r;
+        let rp = rr / 100;
+        let ro = start.r + Math.round(percent * rp);
+
+        let gr = end.g - start.g;
+        let gp = gr / 100;
+        let go = start.g + Math.round(percent * gp);
+
+        let br = end.b - start.b;
+        let bp = br / 100;
+        let bo = start.b + Math.round(percent * bp);
+
+        return {
+            r: ro,
+            g: go,
+            b: bo
+        };
     }
 }

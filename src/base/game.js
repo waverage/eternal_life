@@ -1,74 +1,66 @@
 import Camera from "./camera";
 import Const from "../consts";
 import Runtime from "./runtime";
+import Util from "../utils/util";
 
 export default class Game {
-    constructor(canvas) {
-        this.canvas = canvas;
-        this.ctx = this.canvas.getContext('2d');
-        this.density = 5;
+    constructor() {
         this.toolbarWrap = document.getElementById('game_toolbar');
         this.state = Const.STATE_PAUSE;
-        this.camera = new Camera(this);
         this.frameId = null;
         this.runtime = new Runtime();
-        this.iterationLabel = document.getElementById('iteration_label');
-        this.generationLabel = document.getElementById('generation_label');
-        this.botsCountLabel = document.getElementById('bots_count_label');
+        this.speed = 10;
+        this.mode = Const.VIEW_MODE_DEFAULT;
     }
 
-    init() {
-        // Load settings from inputs
-        this.density = 10;//parseInt(document.getElementById('density').value);
+    init(canvas) {
+        this.canvas = canvas;
+        this.ctx = this.canvas.getContext('2d');
+
+        this.camera = new Camera(this);
+        this.speed = 10;
 
         // Resize canvas
-        this.canvas.width = document.body.clientWidth - 10;
-        this.canvas.height = document.body.clientHeight - this.toolbarWrap.clientHeight - 100;
+        this.canvas.width = document.body.offsetWidth - this.toolbarWrap.offsetWidth - 1;
+        this.canvas.height = document.body.clientHeight - 5;
 
-        this.runtime.init(this.density);
-
-        // Init some handlers
-        document.body.addEventListener('onresize', this.resizeHandler);
+        this.runtime.init();
 
         // Buttons handlers
-        document.getElementById('btn_play').addEventListener('click', this.play());
-        document.getElementById('btn_stop').addEventListener('click', this.stop());
-        document.getElementById('btn_next').addEventListener('click', this.next());
+        window.onresize = this.resizeHandler();
     }
 
     resizeHandler() {
-        this.canvas.width = document.body.clientWidth - 15;
-        this.canvas.height = document.body.clientHeight - this.toolbarWrap.clientHeight - 20;
+        let that = this;
+        return () => {
+            that.canvas.width = document.body.offsetWidth - that.toolbarWrap.offsetWidth - 1;
+            that.canvas.height = document.body.clientHeight - 5;
+        };
+    }
+
+    changeMode(mode) {
+        this.mode = parseInt(mode);
     }
 
     play() {
-        let that = this;
-        return () => {
-            if (that.state === Const.STATE_PLAY) {
-                return;
-            }
-            that.state = Const.STATE_PLAY;
-            that.frameId = setTimeout(that.loop(), 100);
-        };
+        if (this.state === Const.STATE_PLAY) {
+            return;
+        }
+        this.state = Const.STATE_PLAY;
+        this.frameId = setTimeout(this.loop(), this.speed);
     }
 
     stop() {
-        let that = this;
-        return () => {
-            if (that.state === Const.STATE_PAUSE) {
-                return;
-            }
-            that.state = Const.STATE_PAUSE;
-            clearTimeout(that.frameId);
-        };
+        if (this.state === Const.STATE_PAUSE) {
+            return;
+        }
+        this.state = Const.STATE_PAUSE;
+        clearTimeout(this.frameId);
     }
 
     next() {
-        let that = this;
-        return () => {
-            that.runtime.step();
-            that.renderStep();
-        };
+        this.runtime.step();
+        this.renderStep();
     }
 
     restart() {
@@ -80,8 +72,55 @@ export default class Game {
         };
     }
 
-    static getCellColor(cellType) {
+    getCellColor(cellType) {
         return Const.CELL_COLORS[cellType];
+    }
+
+    getBotColor(bot) {
+        let botKills = bot.kill_score * 10;
+        switch (this.mode) {
+            case Const.VIEW_MODE_DEFAULT:
+                if (botKills > bot.sun_energy) {
+                    // Killer
+                    let min = 1;
+                    let max = 100;
+                    let range = max - min;
+                    let p = range / 100;
+                    let curr = (bot.kill_score / p);
+
+                    bot.color = Util.interpolateColor(Const.KILLER_COLORS.start, Const.KILLER_COLORS.end, curr);
+                } else {
+                    // Sunner
+                    let min = 1;
+                    let max = 200;
+                    let range = max - min;
+                    let p = range / 100;
+                    let curr = (bot.sun_energy / p);
+
+                    bot.color = Util.interpolateColor(Const.SUNNER_COLORS.start, Const.SUNNER_COLORS.end, curr);
+                }
+                break;
+            case Const.VIEW_MODE_AGE:
+                let min = 0;
+                let max = 2000;
+                let range = max - min;
+                let p = range / 100;
+                let curr = (bot.age / p);
+
+                bot.color = Util.interpolateColor(Const.AGE_COLORS.start, Const.AGE_COLORS.end, curr);
+                break;
+            case Const.VIEW_MODE_ENERGY:
+                let emin = 0;
+                let emax = bot.hp_to_clone * 3;
+                let erange = emax - emin;
+                let ep = erange / 100;
+                let ecurr = (bot.age / ep);
+
+                bot.color = Util.interpolateColor(Const.ENERGY_COLORS.start, Const.ENERGY_COLORS.end, ecurr);
+                break;
+        }
+
+        return 'rgb(' + bot.color.r + ',' + bot.color.g + ',' + bot.color.b + ')';
     }
 
     renderStep() {
@@ -97,11 +136,17 @@ export default class Game {
         let cell_w = Const.CELL_WIDTH * this.camera.scale;
         let cell_h = Const.CELL_HEIGHT * this.camera.scale;
 
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = 'yellow';
+        this.ctx.moveTo(this.camera.x, this.camera.y + (this.runtime.MAX_Y_FOR_SUN * cell_h));
+        this.ctx.lineTo(this.camera.x + (Const.WORLD_WIDTH * cell_w), this.camera.y + (this.runtime.MAX_Y_FOR_SUN * cell_h));
+        this.ctx.stroke();
+
         for (let y = 0; y < step.length; y++) {
             for (let x = 0; x < step[y].length; x++) {
                 let cellType = this.runtime.getCellType(step[y][x]);
                 if (cellType !== Const.CELL_TYPE_EMPTY && cellType !== Const.CELL_TYPE_BOT) {
-                    this.ctx.fillStyle = this.constructor.getCellColor(cellType);
+                    this.ctx.fillStyle = this.getCellColor(cellType);
                     let cx = this.camera.x + (x * cell_w) + 1;
                     let cy = this.camera.y + (y * cell_h + 1);
                     let cw = cell_w - 2;
@@ -118,8 +163,7 @@ export default class Game {
             }
 
             let bot = this.runtime.bots[i];
-
-            this.ctx.fillStyle = bot.getColor();
+            this.ctx.fillStyle = this.getBotColor(bot);
             let cx = this.camera.x + (bot.x * cell_w) + 1;
             let cy = this.camera.y + (bot.y * cell_h + 1);
             let cw = cell_w - 2;
@@ -137,12 +181,10 @@ export default class Game {
             that.renderStep();
 
             if (this.runtime.iteration % 20 === 0) {
-                this.iterationLabel.innerText = this.runtime.iteration.toString();
-                this.generationLabel.innerText = this.runtime.generation.toString();
-                this.botsCountLabel.innerText = this.runtime.bots.length.toString();
+                this.runtime.countBots = this.runtime.bots.length;
             }
 
-            that.frameId = setTimeout(that.loop(), Const.LOOP_INTERVAL);
+            that.frameId = setTimeout(that.loop(), this.speed);
         };
     }
 }

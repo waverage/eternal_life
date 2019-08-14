@@ -1,23 +1,136 @@
 <template>
     <div id="game_toolbar">
-        <button id="btn_play">Play</button> |
-        <button id="btn_stop">Stop</button> |
-        <button id="btn_next">Next</button> |
-        <span>Iteration: <span id="iteration_label"></span></span> |
-        <span>Generation: <span id="generation_label"></span></span> |
-        <span>Count bots: <span id="bots_count_label"></span></span>
+        <div class="controls">
+            <div class="btn-group">
+                <button @click="playHandler" id="btn_play" class="btn" :style="playStyles">Play</button>
+                <button @click="stopHandler" id="btn_stop" class="btn">Stop</button>
+                <button @click="nextHandler" id="btn_next" class="btn">Next</button>
+            </div>
+            <div class="btn-group">
+                Speed: <input
+                            v-model="speed"
+                            type="range"
+                            id="speed"
+                            class="range-input"
+                            name="volume"
+                            min="1"
+                            max="200"> {{ speed }}
+            </div>
+
+            <div class="btn-group">
+                Mode:
+                <select v-model="mode">
+                    <option value="0">Default</option>
+                    <option value="1">Energy</option>
+                    <option value="2">Age</option>
+                </select>
+            </div>
+        </div>
+        <div class="info-block">
+            <div class="row">
+                <span>Iteration: <span id="iteration_label">{{ iteration }}</span></span>
+            </div>
+            <div class="row">
+                <span>Generation: <span id="generation_label">{{ generation }}</span></span>
+            </div>
+            <div class="row">
+                <span>Count bots: <span id="bots_count_label">{{ countBots }}</span></span>
+            </div>
+            <div class="row">
+                <span>Max generation: <span id="max_bot_generation_label">{{ maxGeneration }}</span></span>
+            </div>
+            <div class="row">
+                <span>Max age: <span id="max_age_label">{{ maxAge }}</span></span>
+            </div>
+        </div>
     </div>
 </template>
 
 <script>
+    import Const from "./../consts";
+    import Util from "../utils/util";
+
     export default {
-        name: "ToolBar"
+        name: "ToolBar",
+        data: () => {
+            return {
+                speed: 10,
+                mode: 0,
+                color: {
+                    r: 250,
+                    g: 0,
+                    b: 0
+                }
+            };
+        },
+        props: {
+            'iteration': Number,
+            'generation': Number,
+            'countBots': Number,
+            'maxGeneration': Number,
+            'maxAge': Number,
+        },
+        methods: {
+            speedChanged() {
+                this.$emit('speed-changed', this.speed);
+
+                let min = 1;
+                let max = 200;
+                let range = max - min;
+                let p = range / 100;
+                let curr = (this.speed / p);
+
+                this.color = Util.interpolateColor(Const.AGE_COLORS.start, Const.AGE_COLORS.end, curr);
+            },
+            modeChanged() {
+                this.$emit('mode-changed', this.mode);
+            },
+            playHandler() {
+                this.$emit('play-clicked');
+            },
+            stopHandler() {
+                this.$emit('stop-clicked');
+            },
+            nextHandler() {
+                this.$emit('next-clicked');
+            }
+        },
+        computed: {
+            playStyles() {
+                return {
+                    'background-color': 'rgb(' + this.color.r + ',' + this.color.g + ',' + this.color.b + ')',
+                };
+            }
+        },
+        watch: {
+            speed: 'speedChanged',
+            mode: 'modeChanged'
+        }
     }
 </script>
 
 <style scoped>
     #game_toolbar {
-        height: 40px;
-        margin-left: 5px;
+        width: 250px;
+        max-width: 300px;
+        background: #ccc;
+        height: 100%;
+        -ms-flex: 0 100px;
+        -webkit-box-flex:  0;
+        -moz-box-flex:  0;
+        padding: 10px;
+    }
+
+    .controls {
+        margin-bottom: 30px;
+    }
+
+    .row {
+        margin: 10px 0;
+    }
+
+    .range-input {
+        display: inline-block;
+        margin: 5px 0 0 0;
     }
 </style>

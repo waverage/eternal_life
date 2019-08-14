@@ -8,11 +8,16 @@ export default class Runtime {
     constructor() {
         this.iteration = 0;
         this.generation = 0;
+        this.maxGeneration = 0;
+        this.maxAge = 0;
+        this.countBots = 0;
         this.matrix = [];
         this.tmp_matrix = [];
         this.bots = [];
         this.tmp_bots = [];
         this.last_ten_bots = [];
+        this.MAX_Y_FOR_SUN = Const.WORLD_HEIGHT / 2 + 3;
+        this.Y_SUN_PERCENT = this.MAX_Y_FOR_SUN / 100;
         this.executor = new CommandExecutor(this);
     }
 
@@ -23,6 +28,9 @@ export default class Runtime {
         this.tmp_bots = [];
         this.last_ten_bots = [];
         this.iteration = 0;
+        this.maxGeneration = 0;
+        this.MAX_Y_FOR_SUN = Const.WORLD_HEIGHT / 2 + 3;
+        this.Y_SUN_PERCENT = this.MAX_Y_FOR_SUN / 100;
         this.generateWorld();
     }
 
@@ -113,8 +121,10 @@ export default class Runtime {
                 bot.x = pos.x;
                 bot.y = pos.y;
                 bot.brain = winnerBots[i].brain;
-                bot.mutateBrain(1);
-
+                bot.params = winnerBots[i].params;
+                bot.hp_to_clone = winnerBots[i].hp_to_clone;
+                bot.generation = ++winnerBots[i].generation;
+                bot.mutate();
                 this.bots.push(bot);
             }
         }
@@ -125,24 +135,25 @@ export default class Runtime {
     generateFuckingGreenBots() {
         // let countGreenBots = Math.round((Runtime.WORLD_HEIGHT * Runtime.WORLD_WIDTH) / 50);
         // console.log('count', countGreenBots);
-        let countGreenBots = Util.rand(1, 10);
-        for (let i = 0; i < countGreenBots; i++) {
-            let pos = this.getRandFreePos(false);
-            if (pos === null) {
-                continue;
-            }
-
-            let bot = new Bot();
-            this.matrix[pos.y][pos.x] = Const.CELL_TYPE_BOT;
-            bot.x = pos.x;
-            bot.y = pos.y;
-            bot.brain = [];
-            for (let i = 0; i < Const.BRAIN_CAPACITY; i++) {
-                bot.brain[i] = Const.COMMAND_SLEEP;
-            }
-
-            this.bots.push(bot);
-        }
+        // let countGreenBots = Util.rand(1, 10);
+        // for (let i = 0; i < countGreenBots; i++) {
+        //     let pos = this.getRandFreePos(false);
+        //     if (pos === null) {
+        //         continue;
+        //     }
+        //
+        //     let bot = new Bot();
+        //     this.matrix[pos.y][pos.x] = Const.CELL_TYPE_BOT;
+        //     bot.x = pos.x;
+        //     bot.y = pos.y;
+        //     bot.brain = [];
+        //     let command = Const.COMMAND_SLEEP;
+        //     for (let i = 0; i < Const.BRAIN_CAPACITY; i++) {
+        //         bot.brain[i] = command;
+        //     }
+        //
+        //     this.bots.push(bot);
+        // }
     }
 
     getBotIndexByPos(x, y) {
@@ -165,9 +176,26 @@ export default class Runtime {
             return item !== null;
         });
 
+        // if (this.iteration % 200 === 0) {
+        //     console.log('iteration', this.iteration, 'bots:', this.bots.length, 'tmp_bots:', this.tmp_bots.length,
+        //         'matrix:', this.matrix.length, 'last_ten', this.last_ten_bots.length);
+        // }
+
+        let updateMaxValues = this.iteration % 500 === 0;
+
         for (let i = 0; i < this.bots.length; i++) {
             if (this.bots[i] !== null) {
                 this.executor.processBot(this.bots[i], i);
+
+                if (updateMaxValues && this.bots[i] !== null) {
+                    if (this.bots[i].generation > this.maxGeneration) {
+                        this.maxGeneration = this.bots[i].generation;
+                    }
+
+                    if (this.bots[i].age > this.maxAge) {
+                        this.maxAge = this.bots[i].age;
+                    }
+                }
             }
         }
 
