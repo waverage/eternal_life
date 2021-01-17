@@ -6,7 +6,8 @@
                 @stop-clicked="stop"
                 @next-clicked="next"
                 @speed-changed="changeSpeed"
-                @mode-changed="changeMode"
+                @view-mode-changed="changeViewMode"
+                @game-mode-changed="changeGameMode"
                 :iteration="getIteration"
                 :generation="getGeneration"
                 :max-generation="getMaxGeneration"
@@ -47,8 +48,11 @@ export default {
         changeSpeed(speed) {
             this.game.speed = speed;
         },
-        changeMode(mode) {
-            this.game.changeMode(mode);
+        changeViewMode(mode) {
+            this.game.changeViewMode(mode);
+        },
+        changeGameMode(mode) {
+            this.game.changeGameMode(mode);
         }
     },
     computed: {

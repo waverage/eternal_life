@@ -30,7 +30,7 @@ const COMMANDS = [
     COMMAND_HP_LOWER,
     COMMAND_HP_BIGGER,
     COMMAND_CLONE,
-    COMMAND_HAVE_SUN,
+    // COMMAND_HAVE_SUN,
     COMMAND_GOTO,
 ];
 
@@ -118,7 +118,7 @@ const STATE_PLAY = 'play';
 const EAT_BOT_REWARD = 30;
 const EAT_DEAD_REWARD = 15;
 
-const SUN_ENERGY_REWARD_COEFICIENT = 25;
+const SUN_ENERGY_REWARD_COEFICIENT = 5;
 
 const DEFAULT_MIN_HP_TO_CLONE = 100;
 const DEFAULT_MAX_HP_TO_CLONE = 300;
@@ -139,6 +139,11 @@ const MUTATE_PARAMS_TRIGGER_VALUE = 0.2;
 
 const BOT_FORCE_CLONE_COEFICIENT = 3;
 const BOT_FORCE_CLONE_RAND_VALUE = 0.2;
+
+const DEAD_AGE_TO_DEAD = 40;
+
+const WORLD_WIDTH = 100;
+const WORLD_HEIGHT = 100;
 
 export default class Const {
     static get COMMAND_MOVE() { return COMMAND_MOVE; }
@@ -165,8 +170,8 @@ export default class Const {
 
     static get BRAIN_CAPACITY() { return 128; }
 
-    static get WORLD_WIDTH() { return 100; }
-    static get WORLD_HEIGHT() { return 100; }
+    static get WORLD_WIDTH() { return WORLD_WIDTH; }
+    static get WORLD_HEIGHT() { return WORLD_HEIGHT; }
 
     static get CELL_TYPE_EMPTY() { return CELL_TYPE_EMPTY; }
     static get CELL_TYPE_WALL() { return CELL_TYPE_WALL; }
@@ -184,11 +189,14 @@ export default class Const {
     static get STATE_PAUSE() { return STATE_PAUSE; }
     static get STATE_PLAY() { return STATE_PLAY; }
 
-    static get DEAD_AGE_TO_DEAD() { return 400; }
+    static get DEAD_AGE_TO_DEAD() { return DEAD_AGE_TO_DEAD; }
 
     static get VIEW_MODE_DEFAULT() { return 0; }
     static get VIEW_MODE_ENERGY() { return 1; }
     static get VIEW_MODE_AGE() { return 2; }
+
+    static get GAME_MODE_PLAY() { return 0; }
+    static get GAME_MODE_EDITOR() { return 1; }
 
     static get AGE_COLORS() { return AGE_COLORS; }
     static get ENERGY_COLORS() { return ENERGY_COLORS; }

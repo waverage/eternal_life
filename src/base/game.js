@@ -10,24 +10,27 @@ export default class Game {
         this.frameId = null;
         this.runtime = new Runtime();
         this.speed = 10;
-        this.mode = Const.VIEW_MODE_DEFAULT;
+        this.view_mode = Const.VIEW_MODE_DEFAULT;
+        this.game_mode = Const.GAME_MODE_PLAY;
     }
 
     init(canvas) {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
 
-        this.camera = new Camera(this);
-        this.speed = 10;
-
         // Resize canvas
         this.canvas.width = document.body.offsetWidth - this.toolbarWrap.offsetWidth - 1;
         this.canvas.height = document.body.clientHeight - 5;
+
+        this.camera = new Camera(this);
+        this.speed = 10;
 
         this.runtime.init();
 
         // Buttons handlers
         window.onresize = this.resizeHandler();
+
+        this.renderStep();
     }
 
     resizeHandler() {
@@ -38,8 +41,12 @@ export default class Game {
         };
     }
 
-    changeMode(mode) {
-        this.mode = parseInt(mode);
+    changeViewMode(mode) {
+        this.view_mode = parseInt(mode);
+    }
+
+    changeGameMode(mode) {
+        this.game_mode = parseInt(mode);
     }
 
     play() {
@@ -78,7 +85,7 @@ export default class Game {
 
     getBotColor(bot) {
         let botKills = bot.kill_score * 10;
-        switch (this.mode) {
+        switch (this.view_mode) {
             case Const.VIEW_MODE_DEFAULT:
                 if (botKills > bot.sun_energy) {
                     // Killer
@@ -131,7 +138,7 @@ export default class Game {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.ctx.fillStyle = '#333';
-        this.ctx.fillRect(0, 0, Const.WORLD_WIDTH * Const.CELL_WIDTH  * 3, Const.WORLD_HEIGHT * Const.CELL_HEIGHT * 3);
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         let cell_w = Const.CELL_WIDTH * this.camera.scale;
         let cell_h = Const.CELL_HEIGHT * this.camera.scale;

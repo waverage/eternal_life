@@ -18,8 +18,8 @@
             </div>
 
             <div class="btn-group">
-                Mode:
-                <select v-model="mode">
+                View mode:
+                <select v-model="view_mode">
                     <option value="0">Default</option>
                     <option value="1">Energy</option>
                     <option value="2">Age</option>
@@ -43,6 +43,14 @@
                 <span>Max age: <span id="max_age_label">{{ maxAge }}</span></span>
             </div>
         </div>
+
+        <div class="btn-group game-mode-switcher">
+            Game mode:
+            <select v-model="game_mode">
+                <option value="0">Play</option>
+                <option value="1">Editor</option>
+            </select>
+        </div>
     </div>
 </template>
 
@@ -55,7 +63,8 @@
         data: () => {
             return {
                 speed: 10,
-                mode: 0,
+                view_mode: 0,
+                game_mode: 0,
                 color: {
                     r: 250,
                     g: 0,
@@ -82,8 +91,11 @@
 
                 this.color = Util.interpolateColor(Const.AGE_COLORS.start, Const.AGE_COLORS.end, curr);
             },
-            modeChanged() {
-                this.$emit('mode-changed', this.mode);
+            viewModeChanged() {
+                this.$emit('view-mode-changed', this.view_mode);
+            },
+            gameModeChanged() {
+                this.$emit('game-mode-changed', this.game_mode);
             },
             playHandler() {
                 this.$emit('play-clicked');
@@ -104,7 +116,8 @@
         },
         watch: {
             speed: 'speedChanged',
-            mode: 'modeChanged'
+            view_mode: 'viewModeChanged',
+            game_mode: 'gameModeChanged'
         }
     }
 </script>
@@ -119,6 +132,7 @@
         -webkit-box-flex:  0;
         -moz-box-flex:  0;
         padding: 10px;
+        position: relative;
     }
 
     .controls {
@@ -132,5 +146,11 @@
     .range-input {
         display: inline-block;
         margin: 5px 0 0 0;
+    }
+
+    .game-mode-switcher {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
     }
 </style>
