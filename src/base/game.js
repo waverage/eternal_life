@@ -10,24 +10,30 @@ export default class Game {
         this.frameId = null;
         this.runtime = new Runtime();
         this.speed = 10;
-        this.mode = Const.VIEW_MODE_DEFAULT;
+        this.view_mode = Const.VIEW_MODE_DEFAULT;
+        this.game_mode = Const.GAME_MODE_PLAY;
+        this.lastTick = performance.now();
+        this.lastRender = this.lastTick;
+        this.tickLength = Const.GAME_TICK_DURATION;
     }
 
     init(canvas) {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
 
-        this.camera = new Camera(this);
-        this.speed = 10;
-
         // Resize canvas
         this.canvas.width = document.body.offsetWidth - this.toolbarWrap.offsetWidth - 1;
         this.canvas.height = document.body.clientHeight - 5;
+
+        this.camera = new Camera(this);
+        this.speed = 10;
 
         this.runtime.init();
 
         // Buttons handlers
         window.onresize = this.resizeHandler();
+
+        this.renderStep();
     }
 
     resizeHandler() {
@@ -38,16 +44,22 @@ export default class Game {
         };
     }
 
-    changeMode(mode) {
-        this.mode = parseInt(mode);
+    changeViewMode(mode) {
+        this.view_mode = parseInt(mode);
+    }
+
+    changeGameMode(mode) {
+        this.game_mode = parseInt(mode);
     }
 
     play() {
         if (this.state === Const.STATE_PLAY) {
             return;
         }
+        this.lastTick = performance.now();
+        this.lastRender = this.lastTick;
         this.state = Const.STATE_PLAY;
-        this.frameId = setTimeout(this.loop(), this.speed);
+        this.frameId = this.loop(this)(performance.now());
     }
 
     stop() {
@@ -55,7 +67,7 @@ export default class Game {
             return;
         }
         this.state = Const.STATE_PAUSE;
-        clearTimeout(this.frameId);
+        window.cancelAnimationFrame(this.frameId);
     }
 
     next() {
@@ -72,14 +84,39 @@ export default class Game {
         };
     }
 
+    clearAll() {
+        this.runtime.killAllBots();
+        this.runtime.countBots = 0;
+        this.runtime.iteration = 0;
+        this.runtime.generation = 0;
+        this.runtime.maxGeneration = 0;
+        this.runtime.maxAge = 0;
+        this.stop();
+        // Need for rerender game field
+        this.next();
+    }
+
+    addBot() {
+        this.runtime.addBot();
+    }
+
     getCellColor(cellType) {
         return Const.CELL_COLORS[cellType];
     }
 
     getBotColor(bot) {
         let botKills = bot.kill_score * 10;
-        switch (this.mode) {
+        switch (this.view_mode) {
             case Const.VIEW_MODE_DEFAULT:
+                if (bot.type === Const.BOT_TYPE_CUSTOM) {
+                    bot.color = {
+                        r: 0,
+                        g: 0,
+                        b: 255
+                    };
+                    break;
+                }
+
                 if (botKills > bot.sun_energy) {
                     // Killer
                     let min = 1;
@@ -102,10 +139,12 @@ export default class Game {
                 break;
             case Const.VIEW_MODE_AGE:
                 let min = 0;
-                let max = 2000;
+                let max = 500;
                 let range = max - min;
                 let p = range / 100;
                 let curr = (bot.age / p);
+
+                // console.log('bot age', bot.age, 'curr age val', curr);
 
                 bot.color = Util.interpolateColor(Const.AGE_COLORS.start, Const.AGE_COLORS.end, curr);
                 break;
@@ -131,7 +170,7 @@ export default class Game {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.ctx.fillStyle = '#333';
-        this.ctx.fillRect(0, 0, Const.WORLD_WIDTH * Const.CELL_WIDTH  * 3, Const.WORLD_HEIGHT * Const.CELL_HEIGHT * 3);
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         let cell_w = Const.CELL_WIDTH * this.camera.scale;
         let cell_h = Const.CELL_HEIGHT * this.camera.scale;
@@ -173,18 +212,32 @@ export default class Game {
         }
     }
 
-    loop() {
-        let that = this;
+    queueUpdates(numTicks) {
+        numTicks = 1;
+        for (let i=0; i < numTicks; i++) {
+            this.lastTick = this.lastTick + this.tickLength;
+            this.runtime.step();
+        }
+    }
 
-        return () => {
-            that.runtime.step();
-            that.renderStep();
-
-            if (this.runtime.iteration % 20 === 0) {
-                this.runtime.countBots = this.runtime.bots.length;
+    loop(game) {
+        return (tFrame) => {
+            game.frameId = window.requestAnimationFrame(game.loop(game));
+            var nextTick = game.lastTick + game.tickLength;
+            var numTicks = 0;
+            
+            if (tFrame > nextTick) {
+                var timeSinceTick = tFrame - game.lastTick;
+                numTicks = Math.floor(timeSinceTick / game.tickLength);
             }
 
-            that.frameId = setTimeout(that.loop(), this.speed);
+            game.queueUpdates(numTicks);
+            game.renderStep();
+            game.lastRender = tFrame;
+
+            if (game.runtime.iteration % 20 === 0) {
+                game.runtime.countBots = game.runtime.bots.length;
+            }
         };
     }
 }

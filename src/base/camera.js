@@ -1,3 +1,5 @@
+import Const from "../consts";
+
 const MIN_SCALE = 0.01;
 const MAX_SCALE = 10;
 
@@ -5,9 +7,8 @@ export default class Camera {
     constructor(game) {
         this.game = game;
         this.canvas = game.canvas;
-        this.scale = 0.65;
-        this.x = 300;
-        this.y = 20;
+
+        this.initScaleAndPosition();
         this.prevMousePos = {x: 0, y: 0};
         this.isDrag = false;
 
@@ -15,6 +16,26 @@ export default class Camera {
         this.canvas.addEventListener('mousemove', this.canvasMove());
         this.canvas.addEventListener('mouseup', this.canvasUp());
         this.canvas.addEventListener('mousewheel', this.canvasScroll());
+    }
+
+    initScaleAndPosition() {
+        let worldWidth = Const.WORLD_WIDTH * Const.CELL_WIDTH;
+        let worldHeight = Const.WORLD_HEIGHT * Const.CELL_HEIGHT;
+
+        this.x = 20;
+        this.y = 20;
+        let widthScale = (this.canvas.width - 40) / worldWidth;
+        let heightScale = (this.canvas.height - 40) / worldHeight;
+
+        this.scale = widthScale > heightScale ? heightScale : widthScale;
+
+        if (widthScale > heightScale) {
+            // Align by x
+            this.x = Math.round((this.canvas.width - (worldWidth * this.scale)) / 2);
+        } else {
+            // Align by y
+            this.y = Math.round((this.canvas.height - (worldHeight * this.scale)) / 2);
+        }
     }
 
     canvasDown() {

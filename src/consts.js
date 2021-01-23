@@ -18,6 +18,8 @@ const COMMAND_CLONE = 9;
 
 const COMMAND_HAVE_SUN = 10;
 
+const COMMAND_SAY = 11;
+
 const COMMAND_GOTO = 20;
 
 const COMMANDS = [
@@ -30,11 +32,10 @@ const COMMANDS = [
     COMMAND_HP_LOWER,
     COMMAND_HP_BIGGER,
     COMMAND_CLONE,
-    COMMAND_HAVE_SUN,
+    // COMMAND_HAVE_SUN,
+    COMMAND_SAY,
     COMMAND_GOTO,
 ];
-
-const COMMAND_AMOUNT = 128;
 
 const DIRECTION_UP = 0;
 const DIRECTION_RIGHT = 2;
@@ -54,6 +55,7 @@ CELL_COLORS[CELL_TYPE_BOT] = '#3e51dd';
 CELL_COLORS[CELL_TYPE_WALL] = '#a3a0a0';
 CELL_COLORS[CELL_TYPE_DEAD] = '#777';
 
+// rgb(70,169,28)
 const AGE_COLORS = {
     start: {
         r: 70,
@@ -106,7 +108,7 @@ const KILLER_COLORS = {
     }
 };
 
-const BOT_PERCENT = 0.1;
+const BOT_PERCENT = 0.01;
 const EMPTY_PERCENT = 0.6;
 
 const CELL_WIDTH = 10;
@@ -115,16 +117,10 @@ const CELL_HEIGHT = 10;
 const STATE_PAUSE = 'pause';
 const STATE_PLAY = 'play';
 
-const EAT_BOT_REWARD = 30;
-const EAT_DEAD_REWARD = 15;
+const HP_TO_CLONE = 300;
 
-const SUN_ENERGY_REWARD_COEFICIENT = 25;
-
-const DEFAULT_MIN_HP_TO_CLONE = 100;
-const DEFAULT_MAX_HP_TO_CLONE = 300;
-
-const DEFAULT_MIN_BOT_HP = 80;
-const DEFAULT_MAX_BOT_HP = 200;
+const DEFAULT_MIN_BOT_HP = 200;
+const DEFAULT_MAX_BOT_HP = 600;
 
 const MIN_BOT_HP_TO_CLONE_LIMIT = 20;
 
@@ -134,11 +130,18 @@ const MAX_CLONE_HP_MODIFIER = 10;
 const MIN_BOT_PARAMS_VALUE = 0;
 const MAX_BOT_PARAMS_VALUE = 512;
 
-const MUTATE_BRAIN_TRIGGER_VALUE = 0.05;
-const MUTATE_PARAMS_TRIGGER_VALUE = 0.2;
+const MUTATE_BRAIN_TRIGGER_VALUE = 0.001;
+const MUTATE_PARAMS_TRIGGER_VALUE = 0.001;
 
-const BOT_FORCE_CLONE_COEFICIENT = 3;
+const BOT_FORCE_CLONE_COEFICIENT = 1;
 const BOT_FORCE_CLONE_RAND_VALUE = 0.2;
+
+const DEAD_AGE_TO_DEAD = 1000;
+
+const WORLD_WIDTH = 100;
+const WORLD_HEIGHT = 50;
+
+const GAME_TICK_DURATION = 50;
 
 export default class Const {
     static get COMMAND_MOVE() { return COMMAND_MOVE; }
@@ -151,11 +154,12 @@ export default class Const {
     static get COMMAND_HP_BIGGER() { return COMMAND_HP_BIGGER; }
     static get COMMAND_CLONE() { return COMMAND_CLONE; }
     static get COMMAND_HAVE_SUN() { return COMMAND_HAVE_SUN; }
+    static get COMMAND_SAY() { return COMMAND_SAY; }
     static get COMMAND_GOTO() { return COMMAND_GOTO; }
 
     static get COMMANDS() { return COMMANDS; }
 
-    static get COMMAND_AMOUNT() { return COMMAND_AMOUNT; }
+    static get COMMAND_AMOUNT() { return 64; }
 
     static get DIRECTION_UP() { return DIRECTION_UP; }
     static get DIRECTION_RIGHT() { return DIRECTION_RIGHT; }
@@ -163,10 +167,12 @@ export default class Const {
     static get DIRECTION_LEFT() { return DIRECTION_LEFT; }
     static get DIRECTIONS() { return DIRECTIONS; }
 
-    static get BRAIN_CAPACITY() { return 128; }
+    static get BRAIN_CAPACITY() { return 64; }
 
-    static get WORLD_WIDTH() { return 100; }
-    static get WORLD_HEIGHT() { return 100; }
+    static get WORLD_WIDTH() { return WORLD_WIDTH; }
+    static get WORLD_HEIGHT() { return WORLD_HEIGHT; }
+
+    static get GAME_TICK_DURATION() { return GAME_TICK_DURATION; }
 
     static get CELL_TYPE_EMPTY() { return CELL_TYPE_EMPTY; }
     static get CELL_TYPE_WALL() { return CELL_TYPE_WALL; }
@@ -184,11 +190,14 @@ export default class Const {
     static get STATE_PAUSE() { return STATE_PAUSE; }
     static get STATE_PLAY() { return STATE_PLAY; }
 
-    static get DEAD_AGE_TO_DEAD() { return 400; }
+    static get DEAD_AGE_TO_DEAD() { return DEAD_AGE_TO_DEAD; }
 
     static get VIEW_MODE_DEFAULT() { return 0; }
     static get VIEW_MODE_ENERGY() { return 1; }
     static get VIEW_MODE_AGE() { return 2; }
+
+    static get GAME_MODE_PLAY() { return 0; }
+    static get GAME_MODE_EDITOR() { return 1; }
 
     static get AGE_COLORS() { return AGE_COLORS; }
     static get ENERGY_COLORS() { return ENERGY_COLORS; }
@@ -196,13 +205,12 @@ export default class Const {
     static get SUNNER_COLORS() { return SUNNER_COLORS; }
     static get KILLER_COLORS() { return KILLER_COLORS; }
 
-    static get EAT_BOT_REWARD() { return EAT_BOT_REWARD; }
-    static get EAT_DEAD_REWARD() { return EAT_DEAD_REWARD; }
+    static get EAT_BOT_REWARD() { return 10; }
+    static get EAT_DEAD_REWARD() { return 30; }
 
-    static get SUN_ENERGY_REWARD_COEFICIENT() { return SUN_ENERGY_REWARD_COEFICIENT; }
+    static get SUN_ENERGY_REWARD_COEFICIENT() { return 2; }
 
-    static get DEFAULT_MIN_HP_TO_CLONE() { return DEFAULT_MIN_HP_TO_CLONE; }
-    static get DEFAULT_MAX_HP_TO_CLONE() { return DEFAULT_MAX_HP_TO_CLONE; }
+    static get HP_TO_CLONE() { return HP_TO_CLONE; }
 
     static get DEFAULT_MIN_BOT_HP() { return DEFAULT_MIN_BOT_HP; }
     static get DEFAULT_MAX_BOT_HP() { return DEFAULT_MAX_BOT_HP; }
@@ -220,4 +228,24 @@ export default class Const {
 
     static get BOT_FORCE_CLONE_COEFICIENT() { return BOT_FORCE_CLONE_COEFICIENT; }
     static get BOT_FORCE_CLONE_RAND_VALUE() { return BOT_FORCE_CLONE_RAND_VALUE; }
+
+    static get BOT_TYPE_DEFAULT () { return 0; }
+    static get BOT_TYPE_CUSTOM () { return 1; }
+
+    static get COMMANDS_NAMES () {
+        let obj = {};
+        obj[COMMAND_MOVE] = 'move';
+        obj[COMMAND_LOOK] = 'look';
+        obj[COMMAND_TURN] = 'turn';
+        obj[COMMAND_EAT] = 'eat';
+        obj[COMMAND_SLEEP] = 'sleep';
+        obj[COMMAND_GIVE_ENERGY] = 'give_energy';
+        obj[COMMAND_HP_LOWER] = 'hp_is_lower';
+        obj[COMMAND_HP_BIGGER] = 'hp_is_bigger';
+        obj[COMMAND_CLONE] = 'clone';
+        obj[COMMAND_HAVE_SUN] = 'have_sun';
+        obj[COMMAND_SAY] = 'say';
+        obj[COMMAND_GOTO] = 'goto';
+        return obj;
+    }
 }

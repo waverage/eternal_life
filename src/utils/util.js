@@ -69,4 +69,44 @@ export default class Util {
             b: bo
         };
     }
+
+    static shuffleArray(arr) {
+        for (var i = arr.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var temp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = temp;
+        }
+
+        return arr;
+    }
+
+    static cellLabel(index) {
+        switch (index) {
+            case Const.CELL_TYPE_EMPTY:
+                return 'empty';
+            case Const.CELL_TYPE_DEAD:
+                return 'dead';
+            case Const.CELL_TYPE_WALL:
+                return 'wall';
+            case Const.CELL_TYPE_BOT:
+                return 'bot';
+        }
+        return 'unknown';
+    }
+    
+    static turnLabel(dir) {
+        switch (dir) {
+            case Const.DIRECTION_UP:
+                return 'up';
+            case Const.DIRECTION_DOWN:
+                return 'down';
+            case Const.DIRECTION_RIGHT:
+                return 'right';
+            case Const.DIRECTION_LEFT:
+                return 'left';
+        }
+
+        return 'unknown dir';
+    }
 }
