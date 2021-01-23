@@ -8,6 +8,8 @@
                 @speed-changed="changeSpeed"
                 @view-mode-changed="changeViewMode"
                 @game-mode-changed="changeGameMode"
+                @clear-all="clearAll"
+                @add-bot="addBotHandler"
                 :iteration="getIteration"
                 :generation="getGeneration"
                 :max-generation="getMaxGeneration"
@@ -53,7 +55,13 @@ export default {
         },
         changeGameMode(mode) {
             this.game.changeGameMode(mode);
-        }
+        },
+        clearAll() {
+            this.game.clearAll();
+        },
+        addBotHandler() {
+            this.game.addBot();
+        },
     },
     computed: {
         getIteration() {

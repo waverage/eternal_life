@@ -12,6 +12,9 @@ export default class Game {
         this.speed = 10;
         this.view_mode = Const.VIEW_MODE_DEFAULT;
         this.game_mode = Const.GAME_MODE_PLAY;
+        this.lastTick = performance.now();
+        this.lastRender = this.lastTick;
+        this.tickLength = Const.GAME_TICK_DURATION;
     }
 
     init(canvas) {
@@ -53,8 +56,10 @@ export default class Game {
         if (this.state === Const.STATE_PLAY) {
             return;
         }
+        this.lastTick = performance.now();
+        this.lastRender = this.lastTick;
         this.state = Const.STATE_PLAY;
-        this.frameId = setTimeout(this.loop(), this.speed);
+        this.frameId = this.loop(this)(performance.now());
     }
 
     stop() {
@@ -62,7 +67,7 @@ export default class Game {
             return;
         }
         this.state = Const.STATE_PAUSE;
-        clearTimeout(this.frameId);
+        window.cancelAnimationFrame(this.frameId);
     }
 
     next() {
@@ -79,6 +84,22 @@ export default class Game {
         };
     }
 
+    clearAll() {
+        this.runtime.killAllBots();
+        this.runtime.countBots = 0;
+        this.runtime.iteration = 0;
+        this.runtime.generation = 0;
+        this.runtime.maxGeneration = 0;
+        this.runtime.maxAge = 0;
+        this.stop();
+        // Need for rerender game field
+        this.next();
+    }
+
+    addBot() {
+        this.runtime.addBot();
+    }
+
     getCellColor(cellType) {
         return Const.CELL_COLORS[cellType];
     }
@@ -87,6 +108,15 @@ export default class Game {
         let botKills = bot.kill_score * 10;
         switch (this.view_mode) {
             case Const.VIEW_MODE_DEFAULT:
+                if (bot.type === Const.BOT_TYPE_CUSTOM) {
+                    bot.color = {
+                        r: 0,
+                        g: 0,
+                        b: 255
+                    };
+                    break;
+                }
+
                 if (botKills > bot.sun_energy) {
                     // Killer
                     let min = 1;
@@ -109,10 +139,12 @@ export default class Game {
                 break;
             case Const.VIEW_MODE_AGE:
                 let min = 0;
-                let max = 2000;
+                let max = 500;
                 let range = max - min;
                 let p = range / 100;
                 let curr = (bot.age / p);
+
+                // console.log('bot age', bot.age, 'curr age val', curr);
 
                 bot.color = Util.interpolateColor(Const.AGE_COLORS.start, Const.AGE_COLORS.end, curr);
                 break;
@@ -180,18 +212,32 @@ export default class Game {
         }
     }
 
-    loop() {
-        let that = this;
+    queueUpdates(numTicks) {
+        numTicks = 1;
+        for (let i=0; i < numTicks; i++) {
+            this.lastTick = this.lastTick + this.tickLength;
+            this.runtime.step();
+        }
+    }
 
-        return () => {
-            that.runtime.step();
-            that.renderStep();
-
-            if (this.runtime.iteration % 20 === 0) {
-                this.runtime.countBots = this.runtime.bots.length;
+    loop(game) {
+        return (tFrame) => {
+            game.frameId = window.requestAnimationFrame(game.loop(game));
+            var nextTick = game.lastTick + game.tickLength;
+            var numTicks = 0;
+            
+            if (tFrame > nextTick) {
+                var timeSinceTick = tFrame - game.lastTick;
+                numTicks = Math.floor(timeSinceTick / game.tickLength);
             }
 
-            that.frameId = setTimeout(that.loop(), this.speed);
+            game.queueUpdates(numTicks);
+            game.renderStep();
+            game.lastRender = tFrame;
+
+            if (game.runtime.iteration % 20 === 0) {
+                game.runtime.countBots = game.runtime.bots.length;
+            }
         };
     }
 }

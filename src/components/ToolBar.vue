@@ -25,6 +25,13 @@
                     <option value="2">Age</option>
                 </select>
             </div>
+
+            <div class="btn-group">
+                <button @click="clearAllHandler" id="btn_clear_all" class="btn">Clear all</button>
+            </div>
+            <div class="btn-group">
+                <button @click="addBotHandler" id="btn_add_bot" class="btn">Add bot</button>
+            </div>
         </div>
         <div class="info-block">
             <div class="row">
@@ -105,7 +112,13 @@
             },
             nextHandler() {
                 this.$emit('next-clicked');
-            }
+            },
+            clearAllHandler() {
+                this.$emit('clear-all');
+            },
+            addBotHandler() {
+                this.$emit('add-bot');
+            },
         },
         computed: {
             playStyles() {

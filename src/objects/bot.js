@@ -13,22 +13,41 @@ export default class Bot {
         this.command_cursor = 0;
         this.brain = [];
         this.params = [];
+        for (let i = 0; i < Const.COMMAND_AMOUNT; i++) {
+            this.brain[i] = 0;
+            this.params[i] = 0;
+        }
+
         this.kill_score = 0;
-        this.hp_to_clone = Util.rand(Const.DEFAULT_MIN_HP_TO_CLONE, Const.DEFAULT_MAX_HP_TO_CLONE);
+        this.hp_to_clone = Const.HP_TO_CLONE;
         this.color = {
             r: 62,
             g: 81,
             b: 221
         };
         this.debug = false;
+        this.type = Const.BOT_TYPE_DEFAULT;
         this.initBrain();
     }
 
     increaseCursor(value) {
+        if (value === -1) {
+            this.command_cursor = 0;
+            return;
+        }
+
         this.command_cursor += value;
         if (this.command_cursor >= Const.COMMAND_AMOUNT) {
             this.command_cursor = this.command_cursor - Const.COMMAND_AMOUNT;
         }
+    }
+
+    setCursor(value) {
+        if (value >= Const.COMMAND_AMOUNT) {
+            value = 0;
+        }
+
+        this.command_cursor = value;
     }
 
     getRandCommand() {
@@ -46,6 +65,16 @@ export default class Bot {
         for (let i = 0; i < Const.BRAIN_CAPACITY; i++) {
             this.params.push(Util.rand(Const.MIN_BOT_PARAMS_VALUE, Const.MAX_BOT_PARAMS_VALUE));
             this.brain[i] = this.getRandCommand();
+        }
+    }
+
+    initGreenBrain() {
+        this.brain = [];
+        this.params = [];
+
+        for (let i = 0; i < Const.BRAIN_CAPACITY; i++) {
+            this.params.push(Util.rand(Const.MIN_BOT_PARAMS_VALUE, Const.MAX_BOT_PARAMS_VALUE));
+            this.brain[i] = Const.COMMAND_HAVE_SUN;
         }
     }
 

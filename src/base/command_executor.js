@@ -2,6 +2,7 @@ import Const from "../consts";
 import Util from "../utils/util";
 import Bot from "../objects/bot";
 import Dead from "../objects/dead";
+import debug from "../utils/debug";
 
 export default class CommandExecutor {
     constructor(runtime) {
@@ -48,6 +49,10 @@ export default class CommandExecutor {
         return command === Const.COMMAND_HAVE_SUN;
     }
 
+    static commandIsSay(command) {
+        return command === Const.COMMAND_SAY;
+    }
+
     getSunEnergy(bot) {
         if (bot.y > this.runtime.MAX_Y_FOR_SUN) {
             return 0;
@@ -60,25 +65,34 @@ export default class CommandExecutor {
         if (bot === null) {
             return;
         }
+        // if (bot.type === 1) {
+        //     debugger;
+        // }
         for (let i = 0; i < 20; i++) {
             //debugger;
             let command = bot.brain[bot.command_cursor];
 
-            if (bot.debug) {
-                debugger;
-            }
+            debug('cursor', bot.command_cursor, 'command', Const.COMMANDS_NAMES[command]);
+            // debug(bot.params);
 
             // 1
             if (this.constructor.commandIsMove(command)) {
                 // Move
                 //debugger;
-                let direction = bot.params[bot.command_cursor] % 8;
+                let direction = bot.params[bot.command_cursor];
+                if (direction === -1) {
+                    // random direction
+                    direction = Const.DIRECTIONS[Util.rand(0, 3)];
+                }
+
                 let newPos = Util.xyFromVector(bot.x, bot.y, direction);
                 let newPosCellType = this.runtime.getCellType(this.runtime.matrix[newPos.y][newPos.x]);
-                if (newPosCellType !== Const.CELL_TYPE_EMPTY) {
+                debug('move dir', direction);
+                bot.direction = direction;
+                // if (newPosCellType !== Const.CELL_TYPE_EMPTY) {
                     let cursorModifier = newPosCellType + 1;
                     bot.increaseCursor(cursorModifier);
-                }
+                // }
 
                 switch (newPosCellType) {
                     case Const.CELL_TYPE_WALL:
@@ -102,24 +116,48 @@ export default class CommandExecutor {
                 // Look
                 let newPos = Util.xyFromVector(bot.x, bot.y, bot.direction);
                 let targetPosCellType = this.runtime.getCellType(this.runtime.matrix[newPos.y][newPos.x]);
-                let cursorModifier = bot.command_cursor + targetPosCellType + 1;
+
+                let lookFor = bot.params[bot.command_cursor];// Cell type to search
+                let cursorModifier;
+
+                debug('look for', lookFor, 'target type', targetPosCellType, 'cursor', bot.command_cursor);
+
+                if (lookFor >= 0 && lookFor <= 3) {
+                    if (lookFor == targetPosCellType) {
+                        cursorModifier = 1;
+                    } else {
+                        cursorModifier = 2;
+                    }
+                } else {
+                    cursorModifier = targetPosCellType + 1;
+                }
+                
+                debug('see', Util.cellLabel(targetPosCellType), 'cursor mod', cursorModifier);
                 bot.increaseCursor(cursorModifier);
                 return;
                 // 3
             } else if (this.constructor.commandIsTurn(command)) {
                 // Turn
-                bot.direction = bot.params[bot.command_cursor] % 8;
+                if (bot.params[bot.command_cursor] == -1) {
+                    bot.direction = Const.DIRECTIONS[Util.rand(0, 3)];
+                } else {
+                    bot.direction = bot.params[bot.command_cursor];
+                }
+
+                debug('turn ', Util.turnLabel(bot.direction));
+
                 bot.increaseCursor(1);
                 return;
                 // 4
             } else if (this.constructor.commandIsEat(command)) {
                 // Eat
-                let direction = bot.params[bot.command_cursor] % 8;
+                let direction = bot.direction;
                 let targetPos = Util.xyFromVector(bot.x, bot.y, direction);
                 let targetPosCellType = this.runtime.getCellType(this.runtime.matrix[targetPos.y][targetPos.x]);
 
                 switch (targetPosCellType) {
                     case Const.CELL_TYPE_BOT:
+                        debug('eat bot');
                         let targetBotIndex = this.runtime.getBotIndexByPos(targetPos.x, targetPos.y);
                         if (targetBotIndex !== null) {
                             this.addToLast(this.runtime.bots[targetBotIndex]);
@@ -128,23 +166,23 @@ export default class CommandExecutor {
                             bot.hp += Const.EAT_BOT_REWARD;
                             bot.kill_score++;
                         }
-
-                        bot.increaseCursor(3);
-                        return;
+                        break;
                     case Const.CELL_TYPE_DEAD:
+                        debug('eat dead');
                         this.runtime.tmp_matrix[targetPos.y][targetPos.x] = Const.CELL_TYPE_EMPTY;
                         bot.hp += Const.EAT_DEAD_REWARD;
                         bot.kill_score++;
-                        bot.increaseCursor(4);
-                        return;
+                        break;
                     default:
-                        bot.increaseCursor(2);
-                        return;
+                        debug('nothing to eat');
                 }
+
+                bot.increaseCursor(1);
                 // 5
             } else if (this.constructor.commandIsSunSleep(command)) {
                 // Sleep
                 let e = this.getSunEnergy(bot);
+                debug('sleep', e);
                 if (e > 0) {
                     bot.hp += e;
                     bot.sun_energy += e;
@@ -169,8 +207,10 @@ export default class CommandExecutor {
             } else if (this.constructor.commandIsHPLower(command)) {
                 let checkWith = bot.params[bot.command_cursor];
                 if (bot.hp < checkWith) {
+                    debug('hp lower true + 1');
                     bot.increaseCursor(1);
                 } else {
+                    debug('hp lower false + 2');
                     bot.increaseCursor(2);
                 }
             } else if (this.constructor.commandIsHPBigger(command)) {
@@ -194,16 +234,23 @@ export default class CommandExecutor {
                 } else {
                     bot.increaseCursor(2);
                 }
+            } else if (this.constructor.commandIsSay(command)) {
+                debug('Bot say ', bot.params[bot.command_cursor]);
+                bot.increaseCursor(1);
             } else {
+                let gotoStep = bot.params[bot.command_cursor];
+                debug('goto', gotoStep === 0 ? 'begin' : gotoStep);
                 // Goto
-                bot.increaseCursor(command);
+                bot.setCursor(gotoStep);
             }
         }
     }
 
     getBotEmptyNeighboarPos(bot) {
-        for (let i = 0; i < 8; i++) {
-            let pos = Util.xyFromVector(bot.x, bot.y, i);
+        let randVectors = Util.shuffleArray([0,1,2,3,4,5,6,7,8,9]);
+        for (let i = 0; i < randVectors.length; i++) {
+            let vector = randVectors[i];
+            let pos = Util.xyFromVector(bot.x, bot.y, vector);
             let cellType = this.runtime.getCellType(this.runtime.tmp_matrix[pos.y][pos.x]);
             if (cellType === Const.CELL_TYPE_EMPTY) {
                 return pos;
@@ -232,7 +279,7 @@ export default class CommandExecutor {
             return false;
         }
 
-        bot.hp -= bot.hp_to_clone;
+        bot.hp -= Math.round(bot.hp_to_clone / 2);
         let newBot = new Bot();
         newBot.x = emptyPos.x;
         newBot.y = emptyPos.y;
@@ -260,7 +307,7 @@ export default class CommandExecutor {
         bot.age++;
 
         if (bot.hp <= 0) {
-            this.runtime.tmp_matrix[bot.y][bot.x] = new Dead();
+            this.runtime.tmp_matrix[bot.y][bot.x] = Const.CELL_TYPE_DEAD;
             this.addToLast(this.runtime.bots[botIndex]);
             this.runtime.bots[botIndex] = null;
         } else if (bot.hp > bot.hp_to_clone * Const.BOT_FORCE_CLONE_COEFICIENT) {
@@ -268,7 +315,7 @@ export default class CommandExecutor {
                 if (!this.cloneBot(bot)) {
                     this.addToLast(this.runtime.bots[botIndex]);
                     this.runtime.bots[botIndex] = null;
-                    this.runtime.tmp_matrix[bot.y][bot.x] = new Dead();
+                    this.runtime.tmp_matrix[bot.y][bot.x] = Const.CELL_TYPE_DEAD;
                 }
             }
         }
