@@ -109,4 +109,50 @@ export default class Util {
 
         return 'unknown dir';
     }
+
+    static isset(object, path) {
+        if (typeof object !== 'object' || object === null) {
+            return false;
+        }
+
+        if (typeof path === 'number') {
+            path = path.toString();
+        }
+
+        let parts;
+        if (typeof path === 'string' || path instanceof String) {
+            parts = [path];
+        } else if (Array.isArray(path)) {
+            parts = path;
+        } else {
+            return false;
+        }
+
+        var findPath = function (object, path) {
+            let first = path.shift().toString();
+            if (object === null || typeof object !== 'object' || typeof object[first] === 'undefined') {
+                return false;
+            }
+
+            if (path.length <= 0) {
+                return true;
+            }
+
+            return findPath(object[first], path);
+        };
+
+        return findPath(object, parts);
+    }
+
+    static empty(variable) {
+        return (
+            variable == undefined ||
+            variable === '' ||
+            variable === 0 ||
+            variable === '0' ||
+            variable === null ||
+            variable === false ||
+            (variable instanceof Array && variable.length === 0)
+        );
+    }
 }

@@ -1,12 +1,14 @@
 import Const from "../consts";
 
-const MIN_SCALE = 0.01;
-const MAX_SCALE = 10;
+//const MIN_SCALE = 0.01;
+//const MAX_SCALE = 10;
 
 export default class Camera {
-    constructor(game) {
+    constructor(game, config) {
         this.game = game;
         this.canvas = game.canvas;
+        this.worldWidth = config.worldWidth;
+        this.worldHeight = config.worldHeight;
 
         this.initScaleAndPosition();
         this.prevMousePos = {x: 0, y: 0};
@@ -19,8 +21,8 @@ export default class Camera {
     }
 
     initScaleAndPosition() {
-        let worldWidth = Const.WORLD_WIDTH * Const.CELL_WIDTH;
-        let worldHeight = Const.WORLD_HEIGHT * Const.CELL_HEIGHT;
+        let worldWidth = this.worldWidth * Const.CELL_WIDTH;
+        let worldHeight = this.worldHeight * Const.CELL_HEIGHT;
 
         this.x = 20;
         this.y = 20;

@@ -3,6 +3,7 @@ import Util from "../utils/util";
 
 export default class Bot {
     constructor() {
+        this.selected = false;
         this.generation = 0;
         this.age = 0;
         this.hp = Util.rand(Const.DEFAULT_MIN_BOT_HP, Const.DEFAULT_MAX_BOT_HP);

@@ -2,7 +2,7 @@ import CommandExecutor from "./command_executor";
 import Const from "../consts";
 import Util from "../utils/util";
 import Bot from "../objects/bot";
-import Dead from "../objects/dead";
+//import Dead from "../objects/dead";
 
 export default class Runtime {
     constructor() {
@@ -21,7 +21,9 @@ export default class Runtime {
         this.executor = new CommandExecutor(this);
     }
 
-    init() {
+    init(config) {
+        this.worldWidth = config.worldWidth;
+        this.worldHeight = config.worldHeight;
         this.matrix = [];
         this.tmp_matrix = [];
         this.bots = [];
@@ -29,32 +31,15 @@ export default class Runtime {
         this.last_ten_bots = [];
         this.iteration = 0;
         this.maxGeneration = 0;
-        this.MAX_Y_FOR_SUN = Const.WORLD_HEIGHT / 2 + 3;
+        this.MAX_Y_FOR_SUN = config.worldHeight / 2 + 3;
         this.Y_SUN_PERCENT = this.MAX_Y_FOR_SUN / 100;
-        this.generateWorld();
+
+        if (config.gameType === 'play') {
+            this.generateWorld();
+        } else if (config.gameType === 'editor') {
+            this.generateEmptyWorld();
+        }
     }
-    /*
-    const COMMAND_MOVE = 1;
-
-const COMMAND_LOOK = 2;
-
-const COMMAND_TURN = 3;
-
-const COMMAND_EAT = 4;
-
-const COMMAND_SLEEP = 5;
-
-const COMMAND_GIVE_ENERGY = 6;
-
-const COMMAND_HP_LOWER = 7;
-
-const COMMAND_HP_BIGGER = 8;
-
-const COMMAND_CLONE = 9;
-
-const COMMAND_HAVE_SUN = 10;
-
-const COMMAND_GOTO = 20;*/
 
     addBot() {
         let bot = this.getEcologyBot();
@@ -62,10 +47,37 @@ const COMMAND_GOTO = 20;*/
         this.matrix[bot.y][bot.x] = Const.CELL_TYPE_BOT;
     }
 
-    generateWorld() {
-        for (let y = 0; y < Const.WORLD_HEIGHT; y++) {
+    addBotToPosition(x, y) {
+        if (x < 0 || y < 0 || x >= this.worldWidth || y >= this.worldHeight) {
+            return null;
+        }
+        if (this.matrix[y][x] === Const.CELL_TYPE_BOT) {
+            return null;
+        }
+        this.unselectAllBots();
+
+        let bot = this.getEcologyBot();
+        bot.x = x;
+        bot.y = y;
+        bot.selected = true;
+        this.bots.push(bot);
+        this.matrix[bot.y][bot.x] = Const.CELL_TYPE_BOT;
+        return bot;
+    }
+
+    generateEmptyWorld() {
+        for (let y = 0; y < this.worldHeight; y++) {
             this.matrix[y] = [];
-            for (let x = 0; x < Const.WORLD_WIDTH; x++) {
+            for (let x = 0; x < this.worldWidth; x++) {
+                this.matrix[y][x] = Const.CELL_TYPE_EMPTY;
+            }
+        }
+    }
+
+    generateWorld() {
+        for (let y = 0; y < this.worldHeight; y++) {
+            this.matrix[y] = [];
+            for (let x = 0; x < this.worldWidth; x++) {
                 let cellType = this.constructor.getRandCellType();
 
                 if (cellType === Const.CELL_TYPE_BOT) {
@@ -89,8 +101,8 @@ const COMMAND_GOTO = 20;*/
 
     getUniversalBot() {
         let bot = new Bot();
-        bot.x = Util.rand(0, Const.WORLD_WIDTH - 1);
-        bot.y = Util.rand(0, Const.WORLD_HEIGHT - 1);
+        bot.x = Util.rand(0, this.worldWidth - 1);
+        bot.y = Util.rand(0, this.worldHeight - 1);
 
         bot.brain[0] = Const.COMMAND_TURN; bot.params[0] = -1; // random turn
         bot.brain[1] = Const.COMMAND_LOOK; bot.params[1] = Const.CELL_TYPE_EMPTY;
@@ -139,8 +151,8 @@ const COMMAND_GOTO = 20;*/
 
     getEcologyBot() {
         let bot = new Bot();
-        bot.x = Util.rand(0, Const.WORLD_WIDTH - 1);
-        bot.y = Util.rand(0, Const.WORLD_HEIGHT - 1);
+        bot.x = Util.rand(0, this.worldWidth - 1);
+        bot.y = Util.rand(0, this.worldHeight - 1);
         bot.brain[0] = Const.COMMAND_TURN; bot.params[0] = Const.DIRECTION_UP;
         bot.brain[1] = Const.COMMAND_LOOK; bot.params[1] = Const.CELL_TYPE_DEAD;
         bot.brain[2] = Const.COMMAND_GOTO; bot.params[2] = 15; // true, cell is dead
@@ -189,9 +201,9 @@ const COMMAND_GOTO = 20;*/
     killAllBots() {
         this.matrix = [];
 
-        for (let y = 0; y < Const.WORLD_HEIGHT; y++) {
+        for (let y = 0; y < this.worldHeight; y++) {
             this.matrix[y] = [];
-            for (let x = 0; x < Const.WORLD_WIDTH; x++) {
+            for (let x = 0; x < this.worldWidth; x++) {
                 this.matrix[y][x] = Const.CELL_TYPE_EMPTY;
             }
         }
@@ -222,14 +234,17 @@ const COMMAND_GOTO = 20;*/
         if (typeof entity === 'number') {
             return entity;
         }
+        if (typeof entity === 'undefined') {
+            return null;
+        }
 
         return entity.type;
     }
 
     getRandFreePos(spawsOnDeads) {
         for (let i = 0; i < 5000; i++) {
-            let x = Util.rand(0, Const.WORLD_WIDTH - 1);
-            let y = Util.rand(0, Const.WORLD_HEIGHT - 1);
+            let x = Util.rand(0, this.worldWidth - 1);
+            let y = Util.rand(0, this.worldHeight - 1);
 
             let cellType = this.getCellType(this.matrix[y][x]);
             if (cellType === Const.CELL_TYPE_EMPTY || (spawsOnDeads && cellType === Const.CELL_TYPE_DEAD)) {
@@ -277,7 +292,7 @@ const COMMAND_GOTO = 20;*/
     }
 
     generateFuckingGreenBots() {
-        // let countGreenBots = Math.round((Runtime.WORLD_HEIGHT * Runtime.WORLD_WIDTH) / 50);
+        // let countGreenBots = Math.round((this.worldHeight * this.worldWidth) / 50);
         // console.log('count', countGreenBots);
         // let countGreenBots = Util.rand(1, 10);
         // for (let i = 0; i < countGreenBots; i++) {
@@ -308,6 +323,57 @@ const COMMAND_GOTO = 20;*/
         }
 
         return null;
+    }
+
+    unselectAllBots() {
+        this.bots.forEach((bot) => {
+            if (bot && bot.selected) {
+                bot.selected = false;
+            }
+        });
+    }
+
+    selectBotByXY(x, y) {
+        let index = this.getBotIndexByPos(x, y);
+        if (index === null) {
+            return null;
+        }
+
+        this.unselectAllBots();
+
+        this.bots[index].selected = true;
+
+        return this.bots[index];
+    }
+
+    setBotByXY(x, y, bot) {
+        let index = this.getBotIndexByPos(x, y);
+
+        window.console.log('set bot to index', index);
+        if (index === null) {
+            return null;
+        }
+
+        this.bots[index] = bot;
+    }
+
+    isBotSelectedByPosition(position) {
+        let index = this.getBotIndexByPos(position.x, position.y);
+        if (index === null) {
+            return false;
+        }
+
+        return this.bots[index].selected;
+    }
+
+    deleteBotByXY(x, y) {
+        let index = this.getBotIndexByPos(x, y);
+        if (index === null) {
+            return;
+        }
+
+        this.bots.splice(index, 1);
+        this.matrix[y][x] = Const.CELL_TYPE_EMPTY;
     }
 
     step() {

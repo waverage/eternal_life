@@ -52,11 +52,7 @@
         </div>
 
         <div class="btn-group game-mode-switcher">
-            Game mode:
-            <select v-model="game_mode">
-                <option value="0">Play</option>
-                <option value="1">Editor</option>
-            </select>
+            <button @click="switchToEditorMode">Switch to editor</button>
         </div>
     </div>
 </template>
@@ -71,7 +67,6 @@
             return {
                 speed: 10,
                 view_mode: 0,
-                game_mode: 0,
                 color: {
                     r: 250,
                     g: 0,
@@ -118,6 +113,9 @@
             },
             addBotHandler() {
                 this.$emit('add-bot');
+            },
+            switchToEditorMode() {
+                this.$emit('open-editor-mode');
             },
         },
         computed: {

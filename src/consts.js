@@ -111,9 +111,6 @@ const KILLER_COLORS = {
 const BOT_PERCENT = 0.01;
 const EMPTY_PERCENT = 0.6;
 
-const CELL_WIDTH = 10;
-const CELL_HEIGHT = 10;
-
 const STATE_PAUSE = 'pause';
 const STATE_PLAY = 'play';
 
@@ -134,7 +131,7 @@ const MUTATE_BRAIN_TRIGGER_VALUE = 0.001;
 const MUTATE_PARAMS_TRIGGER_VALUE = 0.001;
 
 const BOT_FORCE_CLONE_COEFICIENT = 1;
-const BOT_FORCE_CLONE_RAND_VALUE = 0.2;
+const BOT_FORCE_CLONE_RAND_VALUE = 0.02;
 
 const DEAD_AGE_TO_DEAD = 1000;
 
@@ -184,8 +181,8 @@ export default class Const {
     static get BOT_PERCENT() { return BOT_PERCENT; }
     static get EMPTY_PERCENT() { return EMPTY_PERCENT; }
 
-    static get CELL_WIDTH() { return CELL_WIDTH; }
-    static get CELL_HEIGHT() { return CELL_HEIGHT; }
+    static get CELL_WIDTH() { return 10; }
+    static get CELL_HEIGHT() { return 10; }
 
     static get STATE_PAUSE() { return STATE_PAUSE; }
     static get STATE_PLAY() { return STATE_PLAY; }
@@ -233,19 +230,36 @@ export default class Const {
     static get BOT_TYPE_CUSTOM () { return 1; }
 
     static get COMMANDS_NAMES () {
-        let obj = {};
-        obj[COMMAND_MOVE] = 'move';
-        obj[COMMAND_LOOK] = 'look';
-        obj[COMMAND_TURN] = 'turn';
-        obj[COMMAND_EAT] = 'eat';
-        obj[COMMAND_SLEEP] = 'sleep';
-        obj[COMMAND_GIVE_ENERGY] = 'give_energy';
-        obj[COMMAND_HP_LOWER] = 'hp_is_lower';
-        obj[COMMAND_HP_BIGGER] = 'hp_is_bigger';
-        obj[COMMAND_CLONE] = 'clone';
-        obj[COMMAND_HAVE_SUN] = 'have_sun';
-        obj[COMMAND_SAY] = 'say';
-        obj[COMMAND_GOTO] = 'goto';
-        return obj;
+        let COMMANDS_NAMES = {};
+        COMMANDS_NAMES[COMMAND_MOVE] = 'mov';
+        COMMANDS_NAMES[COMMAND_EAT] = 'eat';
+        COMMANDS_NAMES[COMMAND_LOOK] = 'lok';
+        COMMANDS_NAMES[COMMAND_SLEEP] = 'slp';
+        COMMANDS_NAMES[COMMAND_TURN] = 'trn';
+        COMMANDS_NAMES[COMMAND_GIVE_ENERGY] = 'giv';
+        COMMANDS_NAMES[COMMAND_HP_LOWER] = 'hpl';
+        COMMANDS_NAMES[COMMAND_HP_BIGGER] = 'hpb';
+        COMMANDS_NAMES[COMMAND_CLONE] = 'cln';
+        COMMANDS_NAMES[COMMAND_HAVE_SUN] = 'sun';
+        COMMANDS_NAMES[COMMAND_SAY] = 'say';
+        COMMANDS_NAMES[COMMAND_GOTO] = 'gto';
+        return COMMANDS_NAMES;
+    }
+
+    static get COMMANDS_NAMES_TO_NUMBER () {
+        return {
+            mov: COMMAND_MOVE,
+            eat: COMMAND_EAT,
+            lok: COMMAND_LOOK,
+            slp: COMMAND_SLEEP,
+            trn: COMMAND_TURN,
+            giv: COMMAND_GIVE_ENERGY,
+            hpl: COMMAND_HP_LOWER,
+            hpb: COMMAND_HP_BIGGER,
+            cln: COMMAND_CLONE,
+            sun: COMMAND_HAVE_SUN,
+            say: COMMAND_SAY,
+            gto: COMMAND_GOTO,
+        };
     }
 }

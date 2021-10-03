@@ -17,31 +17,69 @@ export default class Game {
         this.tickLength = Const.GAME_TICK_DURATION;
     }
 
-    init(canvas) {
-        this.canvas = canvas;
+    init(config) {
+        this.canvas = config.canvas;
         this.ctx = this.canvas.getContext('2d');
 
-        // Resize canvas
-        this.canvas.width = document.body.offsetWidth - this.toolbarWrap.offsetWidth - 1;
-        this.canvas.height = document.body.clientHeight - 5;
-
-        this.camera = new Camera(this);
+        this.config = config;
+        this.camera = new Camera(this, {
+            worldWidth: config.worldWidth,
+            worldHeight: config.worldHeight,
+        });
         this.speed = 10;
 
-        this.runtime.init();
-
-        // Buttons handlers
-        window.onresize = this.resizeHandler();
+        this.runtime.init(config);
 
         this.renderStep();
     }
 
-    resizeHandler() {
-        let that = this;
-        return () => {
-            that.canvas.width = document.body.offsetWidth - that.toolbarWrap.offsetWidth - 1;
-            that.canvas.height = document.body.clientHeight - 5;
-        };
+    getInnerPositionByMousePos(position) {
+        let x = (position.x - this.camera.x);
+        let y = (position.y - this.camera.y);
+        let cellW = Const.CELL_WIDTH * this.camera.scale;
+        let cellH = Const.CELL_HEIGHT * this.camera.scale;
+        let tx = Math.floor(x / cellW);
+        let ty = Math.floor(y / cellH);
+
+        return {x: tx, y: ty};
+    }
+
+    isBotSelectedByPosition(position) {
+        let innerPosition = this.getInnerPositionByMousePos(position);
+        return this.runtime.isBotSelectedByPosition(innerPosition);
+    }
+
+    deleteBotByPosition(position) {
+        let innerPosition = this.getInnerPositionByMousePos(position);
+        this.runtime.deleteBotByXY(innerPosition.x, innerPosition.y);
+        this.renderStep();
+    }
+
+    addBotToPosition(position) {
+        let innerPosition = this.getInnerPositionByMousePos(position);
+        let bot = this.runtime.addBotToPosition(innerPosition.x, innerPosition.y);
+        this.renderStep();
+
+        return bot;
+    }
+
+    updateBotInPosition(position, bot) {
+        this.runtime.setBotByXY(position.x, position.y, bot);
+    }
+
+    getBotByXY(position) {
+        let innerPosition = this.getInnerPositionByMousePos(position);
+        window.console.log('x index', innerPosition.x, 'y index', innerPosition.y);
+        let bot = this.runtime.selectBotByXY(innerPosition.x, innerPosition.y);
+        if (bot) {
+            this.renderStep();
+        }
+
+        return bot;
+    }
+
+    getBotByInnerXY(x, y) {
+        return this.runtime.selectBotByXY(x, y);
     }
 
     changeViewMode(mode) {
@@ -107,7 +145,7 @@ export default class Game {
     getBotColor(bot) {
         let botKills = bot.kill_score * 10;
         switch (this.view_mode) {
-            case Const.VIEW_MODE_DEFAULT:
+            case Const.VIEW_MODE_DEFAULT: {
                 if (bot.type === Const.BOT_TYPE_CUSTOM) {
                     bot.color = {
                         r: 0,
@@ -137,7 +175,8 @@ export default class Game {
                     bot.color = Util.interpolateColor(Const.SUNNER_COLORS.start, Const.SUNNER_COLORS.end, curr);
                 }
                 break;
-            case Const.VIEW_MODE_AGE:
+            }
+            case Const.VIEW_MODE_AGE: {
                 let min = 0;
                 let max = 500;
                 let range = max - min;
@@ -148,7 +187,8 @@ export default class Game {
 
                 bot.color = Util.interpolateColor(Const.AGE_COLORS.start, Const.AGE_COLORS.end, curr);
                 break;
-            case Const.VIEW_MODE_ENERGY:
+            }
+            case Const.VIEW_MODE_ENERGY: {
                 let emin = 0;
                 let emax = bot.hp_to_clone * 3;
                 let erange = emax - emin;
@@ -157,6 +197,7 @@ export default class Game {
 
                 bot.color = Util.interpolateColor(Const.ENERGY_COLORS.start, Const.ENERGY_COLORS.end, ecurr);
                 break;
+            }
         }
 
         return 'rgb(' + bot.color.r + ',' + bot.color.g + ',' + bot.color.b + ')';
@@ -178,7 +219,7 @@ export default class Game {
         this.ctx.beginPath();
         this.ctx.strokeStyle = 'yellow';
         this.ctx.moveTo(this.camera.x, this.camera.y + (this.runtime.MAX_Y_FOR_SUN * cell_h));
-        this.ctx.lineTo(this.camera.x + (Const.WORLD_WIDTH * cell_w), this.camera.y + (this.runtime.MAX_Y_FOR_SUN * cell_h));
+        this.ctx.lineTo(this.camera.x + (this.config.worldWidth * cell_w), this.camera.y + (this.runtime.MAX_Y_FOR_SUN * cell_h));
         this.ctx.stroke();
 
         for (let y = 0; y < step.length; y++) {
@@ -209,6 +250,63 @@ export default class Game {
             let ch = cell_h - 2;
 
             this.ctx.fillRect(cx, cy, cw, ch);
+
+            if (bot.selected) {
+                // Render selected style
+                this.ctx.beginPath();
+                this.ctx.strokeStyle = 'red';
+                this.ctx.moveTo(cx-1, cy-1);
+                this.ctx.lineTo(cx+cw+1, cy-1);
+                this.ctx.lineTo(cx+cw+1, cy+ch+1);
+                this.ctx.lineTo(cx-1, cy+ch+1);
+                this.ctx.lineTo(cx-1, cy-1);
+                this.ctx.stroke();
+
+                this.renderDirection(bot, cx, cy, cw, ch);
+            }
+        }
+    }
+
+    renderDirection(bot, cx, cy, cw, ch) {
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = 'white';
+
+        switch (bot.direction) {
+            case Const.DIRECTION_UP: {
+                this.ctx.moveTo(cx+(cw / 2), cy+ch - 2);
+                this.ctx.lineTo(cx+(cw / 2), cy+2);
+                this.ctx.lineTo(cx+(cw / 2) - 3, cy+6);
+                this.ctx.moveTo(cx+(cw / 2), cy+2);
+                this.ctx.lineTo(cx+(cw / 2) + 3, cy+6);
+                this.ctx.stroke();
+                break;
+            }
+            case Const.DIRECTION_DOWN: {
+                this.ctx.moveTo(cx+(cw / 2), cy+1);
+                this.ctx.lineTo(cx+(cw / 2), cy+ch-2);
+                this.ctx.lineTo(cx+(cw / 2) - 3, cy+ch-6);
+                this.ctx.moveTo(cx+(cw / 2), cy+ch-2);
+                this.ctx.lineTo(cx+(cw / 2) + 3, cy+ch-6);
+                this.ctx.stroke();
+                break;
+            }
+            case Const.DIRECTION_LEFT: {
+                this.ctx.moveTo(cx+cw-2, cy+(ch / 2));
+                this.ctx.lineTo(cx+2, cy+(ch / 2));
+                this.ctx.lineTo(cx+6, cy+(ch / 2) - 3);
+                this.ctx.moveTo(cx+2, cy+(ch / 2));
+                this.ctx.lineTo(cx+6, cy+(ch / 2) + 3);
+                this.ctx.stroke();
+                break;
+            }
+            case Const.DIRECTION_RIGHT: {
+                this.ctx.moveTo(cx+2, cy+(ch / 2));
+                this.ctx.lineTo(cx+cw-2, cy+(ch / 2));
+                this.ctx.lineTo(cx+cw-6, cy+(ch / 2) - 3);
+                this.ctx.moveTo(cx+cw-2, cy+(ch / 2));
+                this.ctx.lineTo(cx+cw-6, cy+(ch / 2) + 3);
+                this.ctx.stroke();
+            }
         }
     }
 
